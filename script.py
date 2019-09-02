@@ -19,6 +19,8 @@ def bisect(list, badguy):
     response.communicate()[0]
     response = response.returncode
 
+    # TODO: check if special code 125 is needed and decide range of error codes
+    # by default, 0 exit code means the commit is a good one
     if len(list) == 1:
         if response == 0:
             return badguy
@@ -57,8 +59,9 @@ def main():
     goodcommit = sys.argv[2]
 
 
+    # TODO: give better error outputs
     if (badcommit == None):
-        print "missing parameter" # give better err
+        print "missing parameter"
         return
 
     if (goodcommit == None):
@@ -111,16 +114,6 @@ def main():
     print "The bug was introduced in this commit: "
     print badcommit
 
-
-
-
-        #repeat process on new branches
-
-
-    #check if other branches -> merge commit      rev-list
-    # git rev-list f4c92ecd85144098653542a164a8e79a39f79ed3^2 --not f4c92ecd85144098653542a164a8e79a39f79ed3^
-    #repeat search for each branch merged in the commit
-    # TODO: for sha1^i -> not con master -> se no output stoppo
 
 
 if __name__=='__main__':
