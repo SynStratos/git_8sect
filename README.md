@@ -5,7 +5,7 @@ It can work on multiple branch merges and nested merges, trying to visit the lea
 The command line is almost the same of bisect.
 
 Run in your git repository folder:
-'''
+```
 python [path-to-this-script]/script.py [bad-commit-sha1] [good-commit-sha1] [path-to-the-benchmarking-script]
-'''
+```
 
