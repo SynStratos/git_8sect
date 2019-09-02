@@ -14,19 +14,24 @@ def bisect(list, badguy):
     print ("checking the commit: " + str(commit))
 
     response = subprocess.Popen(['git', 'checkout', commit], stdout=subprocess.PIPE)
-    response = response.communicate()
+    response = response.communicate()[0]
     response = subprocess.Popen(script, stdout=subprocess.PIPE)
     response.communicate()[0]
     response = response.returncode
 
     # TODO: check if special code 125 is needed and decide range of error codes
     # by default, 0 exit code means the commit is a good one
+
+
+
     if len(list) == 1:
         if response == 0:
+            print "last check for this branch is good"
             return badguy
         # elif response == 125:
         #
         else:
+            print "last check for this branch is bad"
             return commit
 
     if response == 0:
@@ -37,7 +42,11 @@ def bisect(list, badguy):
     else:
         print "bad"
         badguy = commit
-        badguy = bisect(list[index:], badguy)
+        if (list.index(badguy) == len(list) - 1):
+            print "last check for this branch is bad"
+            return badguy
+        else:
+            badguy = bisect(list[index+1:], badguy)
 
     return badguy
 
@@ -48,9 +57,9 @@ def check_merge(commit):
     branches = branches.split(' ')
 
     if branches[0] == 'Merge:':
-        return True, branches
+        return True, branches[1:]
     else:
-        return False, branches
+        return False, None
 
 
 
@@ -79,6 +88,8 @@ def main():
 
     badcommit = bisect(list, badcommit)
 
+    print badcommit
+
     is_merge = False
 
     is_merge, branches = check_merge(badcommit)
@@ -87,12 +98,15 @@ def main():
         oldbad = badcommit
 
         for branch in branches[1:]:
+            # for each parent branch different from master branch [always the first in parent list]
             other_branches = branches
-            other_branches = other_branches.remove(branch)
+            # I need the list of branches different from the one I am checking for the '--not' argument of 'git rev-list'
+            other_branches.remove(branch)
             command_line = ['git', 'rev-list', badcommit, '--not'] + other_branches
 
             branch = subprocess.check_output(command_line)
-
+            branch = branch.split('\n')[1:]
+            # i get all the commits contained in that branch that are not present in the actual master branch and cutting out the merge node
             new_commit = bisect(branch, badcommit)
 
             # the bad commit is in the selected branch, not going to search the other in case of multiple merge
