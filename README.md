@@ -9,3 +9,5 @@ Run in your git repository folder:
 python <path-to-this-script>/script.py <bad-commit-sha1> <good-commit-sha1> <path-to-the-benchmarking-script>
 ```
 
+TODO:
+runs only a python script as benchmarking script -> simple edit to run shell script
