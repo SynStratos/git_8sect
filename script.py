@@ -1,8 +1,8 @@
 import subprocess
-import sys
-import os
+from sys import argv
+from os import devnull
 
-sh = sys.argv[3]
+sh = argv[3]
 
 # binary search implementation
 def bisect(list, badguy):
@@ -15,7 +15,7 @@ def bisect(list, badguy):
     commit = list[index]
     print ("checking the commit: " + str(commit))
 
-    FNULL = open(os.devnull, 'w') # I don't want to print checkout stdout
+    FNULL = open(devnull, 'w') # I don't want to print checkout stdout
     retcode = subprocess.call(['git', 'checkout', commit], stdout=FNULL, stderr=subprocess.STDOUT)
 
     # the benchmarking script is run and the exit code is stored in response
@@ -70,8 +70,8 @@ def check_merge(commit):
 
 # main method
 def main():
-    badcommit = sys.argv[1] # 'master'
-    goodcommit = sys.argv[2]
+    badcommit = argv[1] # 'master'
+    goodcommit = argv[2]
 
 
     # TODO: give better error outputs
@@ -83,7 +83,7 @@ def main():
         print "missing parameter"
         return
 
-    if (sys.argv[3] == None):
+    if (argv[3] == None):
         print "missing parameter"
         return
 
