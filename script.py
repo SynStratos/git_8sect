@@ -2,13 +2,15 @@ import subprocess
 from sys import argv
 from os import devnull
 
-sh = argv[3]
+# sh = argv[3]
 
 # binary search implementation
 def bisect(list, badguy):
 
-    global sh
-    script = ['python', sh]
+    #global sh
+    #script = ['python', sh]
+
+    script = argv[3]
 
     index = (int)(len(list) / 2)
 
