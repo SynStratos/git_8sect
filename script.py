@@ -2,8 +2,6 @@ import subprocess
 from sys import argv
 from os import devnull
 
-# sh = argv[3]
-
 # binary search implementation
 def bisect(list, badguy):
 
@@ -11,8 +9,6 @@ def bisect(list, badguy):
     #script = ['python', sh]
 
     script = argv[3].split(' ')
-
-    print script
     index = (int)(len(list) / 2)
 
     commit = list[index]
@@ -22,8 +18,7 @@ def bisect(list, badguy):
     retcode = subprocess.call(['git', 'checkout', commit], stdout=FNULL, stderr=subprocess.STDOUT)
 
     # the benchmarking script is run and the exit code is stored in response
-    response = subprocess.check_output(script) #, stdout=subprocess.PIPE) #Popen(script, stdout=subprocess.PIPE)
-    print response
+    response = subprocess.Popen(script, stdout=subprocess.PIPE)
     response.communicate()
     response = response.returncode
 
