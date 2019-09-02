@@ -1,18 +1,25 @@
 import subprocess
 import sys
 
-
+sh = sys.argv[3]
 
 def bisect(list, badguy):
     # binary search implementation
-    script = sys.argv[3]
+    global sh
+    script = ['python', sh]
 
-    index = (int)(list.length / 2)
+    index = (int)(len(list) / 2)
+
     commit = list[index]
-    respo = subprocess.check_output(['git', 'checkout', commit])
-    response = subprocess.check_output(script)
+    print ("checking the commit: " + str(commit))
 
-    if list.length == 1:
+    response = subprocess.Popen(['git', 'checkout', commit], stdout=subprocess.PIPE)
+    response = response.communicate()
+    response = subprocess.Popen(script, stdout=subprocess.PIPE)
+    response.communicate()[0]
+    response = response.returncode
+
+    if len(list) == 1:
         if response == 0:
             return badguy
         # elif response == 125:
@@ -21,15 +28,18 @@ def bisect(list, badguy):
             return commit
 
     if response == 0:
+        print "good"
         badguy = bisect(list[:index], badguy)
     # elif response == 125:
     #    print 'error'
     else:
+        print "bad"
         badguy = commit
         badguy = bisect(list[index:], badguy)
 
     return badguy
 
+# this method will check if the commit is a merge node, returning all the branches it is contained
 def check_merge(commit):
     branches = subprocess.check_output(['git', 'log', '-1', commit])
     branches = branches.split('\n')[1]
@@ -61,12 +71,10 @@ def main():
 
     master_commits = subprocess.check_output(['git', 'rev-list', '--first-parent', badcommit]).split('\n')[:-1]
 
-    list = master_commits.indexof(goodcommit)
+    list = master_commits.index(goodcommit)
     list = master_commits[:list]
 
     badcommit = bisect(list, badcommit)
-
-# TODO: fare while su risultato della ricerca nei branch finchè il nodo output non è un nodo di merge -> nel caso di merge innestati
 
     is_merge = False
 
@@ -94,11 +102,12 @@ def main():
         # maybe the bug derives from a conflict in the merged items (easily possible in multiple merges)
         if oldbad == badcommit:
             break
-        else
+        else:
             # check if the new selected bad commit is a merge node itself
             # if is_merge is False the loop will stop
             is_merge, branches = check_merge(badcommit)
 
+    subprocess.call(['git', 'checkout', 'master'])
     print "The bug was introduced in this commit: "
     print badcommit
 
