@@ -1,10 +1,12 @@
 import subprocess
 import sys
+import os
 
 sh = sys.argv[3]
 
+# binary search implementation
 def bisect(list, badguy):
-    # binary search implementation
+
     global sh
     script = ['python', sh]
 
@@ -13,25 +15,26 @@ def bisect(list, badguy):
     commit = list[index]
     print ("checking the commit: " + str(commit))
 
-    response = subprocess.Popen(['git', 'checkout', commit], stdout=subprocess.PIPE)
-    response = response.communicate()[0]
+    FNULL = open(os.devnull, 'w') # I don't want to print checkout stdout
+    retcode = subprocess.call(['git', 'checkout', commit], stdout=FNULL, stderr=subprocess.STDOUT)
+
+    # the benchmarking script is run and the exit code is stored in response
     response = subprocess.Popen(script, stdout=subprocess.PIPE)
-    response.communicate()[0]
+    response.communicate()
     response = response.returncode
 
     # TODO: check if special code 125 is needed and decide range of error codes
     # by default, 0 exit code means the commit is a good one
 
-
-
     if len(list) == 1:
+        print "last check for this branch"
         if response == 0:
-            print "last check for this branch is good"
+            print "good"
             return badguy
         # elif response == 125:
         #
         else:
-            print "last check for this branch is bad"
+            print "bad"
             return commit
 
     if response == 0:
@@ -40,17 +43,20 @@ def bisect(list, badguy):
     # elif response == 125:
     #    print 'error'
     else:
-        print "bad"
         badguy = commit
+        # if the bad commit is the last element of the current list, the research is over
         if (list.index(badguy) == len(list) - 1):
-            print "last check for this branch is bad"
+            print "last check for this branch"
+            print "bad"
             return badguy
         else:
+            print "bad"
             badguy = bisect(list[index+1:], badguy)
 
     return badguy
 
-# this method will check if the commit is a merge node, returning all the branches it is contained
+
+# this method will check if the commit is a merge node, returning all the branches involved in the merge
 def check_merge(commit):
     branches = subprocess.check_output(['git', 'log', '-1', commit])
     branches = branches.split('\n')[1]
@@ -62,7 +68,7 @@ def check_merge(commit):
         return False, None
 
 
-
+# main method
 def main():
     badcommit = sys.argv[1] # 'master'
     goodcommit = sys.argv[2]
@@ -92,6 +98,7 @@ def main():
 
     is_merge = False
 
+    # check if the resulted bad commit corresponds to a merge node
     is_merge, branches = check_merge(badcommit)
 
     while(is_merge):
@@ -102,10 +109,11 @@ def main():
             other_branches = branches
             # I need the list of branches different from the one I am checking for the '--not' argument of 'git rev-list'
             other_branches.remove(branch)
-            command_line = ['git', 'rev-list', badcommit, '--not'] + other_branches
-
+            # get all the commits belonging to the selected branch
+            command_line = ['git', 'rev-list', branch, '--not'] + other_branches
             branch = subprocess.check_output(command_line)
-            branch = branch.split('\n')[1:]
+            # split and eat the empty line
+            branch = branch.split('\n')[:-1]
             # i get all the commits contained in that branch that are not present in the actual master branch and cutting out the merge node
             new_commit = bisect(branch, badcommit)
 
@@ -125,6 +133,9 @@ def main():
             is_merge, branches = check_merge(badcommit)
 
     subprocess.call(['git', 'checkout', 'master'])
+
+    print "---------------------------------------"
+    print "---------------------------------------"
     print "The bug was introduced in this commit: "
     print badcommit
 
