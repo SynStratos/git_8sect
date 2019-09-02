@@ -6,7 +6,7 @@ The command line is almost the same of bisect.
 
 Run in your git repository folder:
 ```
-python <path-to-this-script>/script.py <bad-commit-sha1> <good-commit-sha1> '<benchmarking shell script>'
+python <path-to-this-script>/script.py <bad-commit-sha1> <good-commit-sha1> '<benchmarking-shell-script>'
 ```
 
 ### Example
