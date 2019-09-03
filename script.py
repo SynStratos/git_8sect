@@ -66,19 +66,62 @@ def check_merge(commit):
     else:
         return False, None
 
+# given dates of test for bad and good build, the method returns the corresponding commit sha1
+def search_date(bad_date, good_date, commits):
+    bad_date = subprocess.check_output(['date', '+%s', '-ud', bad_date])
+    good_date = subprocess.check_output(['date', '+%s', '-ud', good_date])
+
+    dmap = []
+    bad_commit = None
+    good_commit = None
+
+    for commit in master_commits:
+        date = subprocess.check_output(['git', 'show', '-s', '--format=%ct', commit]) # date in unix format
+        date = date[:-1] # eat '\n'
+        dmap.append([commit, date])
+
+    for i in range(len(dmap)):
+        commit = dmap[i]
+        if i == 0:
+            if commit[1] <= bad_date:
+                bad_commit = commit
+                break
+        else:
+            if dmap[i-1][1] > bad_date and commit[1] <= bad_date:
+                bad_commit = commit
+                break
+
+    idx = dmap.index(bad_commit)
+    dmap = dmap[idx:]
+
+    for i in range(len(dmap)):
+        commit = dmap[i]
+        if i > 0:
+            if dmap[i-1][1] > good_date and commit[1] <= good_date:
+                good_date = commit
+                break
+
+
+    if bad_commit is None:
+        print "Can't find the bad commit date"
+        sys.exit()
+    if good_commit is None:
+        print "Can't find the good commit date"
+        sys.exit()
+
+
+    return bad_commit[0], good_commit[0]
+
+
 
 # main method
 def main():
-    badcommit = argv[1] # 'master'
-    goodcommit = argv[2]
-
-
     # TODO: give better error outputs
-    if (badcommit == None):
+    if (argv[1] == None):
         print "missing parameter"
         return
 
-    if (goodcommit == None):
+    if (argv[2] == None):
         print "missing parameter"
         return
 
@@ -86,12 +129,20 @@ def main():
         print "missing parameter"
         return
 
-    master_commits = subprocess.check_output(['git', 'rev-list', '--first-parent', badcommit]).split('\n')[:-1]
+    bad_date = argv[1]
+    good_date = argv[2]
 
-    list = master_commits.index(goodcommit)
-    list = master_commits[:list]
+    master_commits = subprocess.check_output(['git', 'rev-list', '--first-parent', 'master']).split('\n')[:-1]
 
-    badcommit = bisect(list, badcommit)
+    badcommit, goodcommit = search_date(bad_date, good_date, master_commits)
+
+    index = master_commits.index(badcommit)
+    master_commits = master_commits[index:]
+
+    index = master_commits.index(goodcommit)
+    master_commits = master_commits[:list]
+
+    badcommit = bisect(master_commits, badcommit)
 
     print badcommit
 
