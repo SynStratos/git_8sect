@@ -75,7 +75,7 @@ def search_date(bad_date, good_date, commits):
     bad_commit = None
     good_commit = None
 
-    for commit in master_commits:
+    for commit in commits:
         date = subprocess.check_output(['git', 'show', '-s', '--format=%ct', commit]) # date in unix format
         date = date[:-1] # eat '\n'
         dmap.append([commit, date])
