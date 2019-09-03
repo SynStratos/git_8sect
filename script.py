@@ -6,17 +6,14 @@ import sys
 # binary search implementation
 def bisect(list, badguy):
 
-    #global sh
-    #script = ['python', sh]
-
-    script = argv[3].split(' ')
-    index = (int)(len(list) / 2)
+    script = argv[4].split(' ')
+    index = int(len(list) / 2)
 
     commit = list[index]
-    print ("checking the commit: " + str(commit))
+    print("checking the commit: " + str(commit))
 
-    FNULL = open(devnull, 'w') # I don't want to print checkout stdout
-    retcode = subprocess.call(['git', 'checkout', commit], stdout=FNULL, stderr=subprocess.STDOUT)
+    fnull = open(devnull, 'w') # I don't want to print checkout stdout
+    retcode = subprocess.call(['git', 'checkout', commit], stdout=fnull, stderr=subprocess.STDOUT)
 
     # the benchmarking script is run and the exit code is stored in response
     response = subprocess.Popen(script, stdout=subprocess.PIPE)
@@ -27,30 +24,30 @@ def bisect(list, badguy):
     # by default, 0 exit code means the commit is a good one
 
     if len(list) == 1:
-        print "last check for this branch"
+        print("last check for this branch")
         if response == 0:
-            print "good"
+            print("good")
             return badguy
         # elif response == 125:
         #
         else:
-            print "bad"
+            print("bad")
             return commit
 
     if response == 0:
-        print "good"
+        print("good")
         badguy = bisect(list[:index], badguy)
     # elif response == 125:
     #    print 'error'
     else:
         badguy = commit
         # if the bad commit is the last element of the current list, the research is over
-        if (list.index(badguy) == len(list) - 1):
-            print "last check for this branch"
-            print "bad"
+        if list.index(badguy) == len(list) - 1:
+            print("last check for this branch")
+            print("bad")
             return badguy
         else:
-            print "bad"
+            print("bad")
             badguy = bisect(list[index+1:], badguy)
 
     return badguy
@@ -67,93 +64,46 @@ def check_merge(commit):
     else:
         return False, None
 
-# given dates of test for bad and good build, the method returns the corresponding commit sha1
-def search_date(bad_date, good_date, commits):
-    bad_date = subprocess.check_output(['date', '+%s', '-ud', bad_date])
-    good_date = subprocess.check_output(['date', '+%s', '-ud', good_date])
-
-    dmap = []
-    bad_commit = None
-    good_commit = None
-
-    for commit in commits:
-        date = subprocess.check_output(['git', 'show', '-s', '--format=%ct', commit]) # date in unix formatd
-        date = date[:-1] # eat '\n'
-        dmap.append([commit, date])
-
-    for i in range(len(dmap)):
-        commit = dmap[i]
-        if i == 0:
-            if commit[1] <= bad_date:
-                bad_commit = commit
-                break
-        else:
-            if dmap[i-1][1] > bad_date and commit[1] <= bad_date:
-                bad_commit = commit
-                break
-
-    idx = dmap.index(bad_commit)
-    dmap = dmap[idx:]
-
-    for i in range(len(dmap)):
-        commit = dmap[i]
-        if i > 0:
-            if dmap[i-1][1] > good_date and commit[1] <= good_date:
-                good_commit = commit
-                break
-
-
-    if bad_commit is None:
-        print "Can't find the bad commit date"
-        sys.exit()
-    if good_commit is None:
-        print "Can't find the good commit date"
-        sys.exit()
-
-
-    return bad_commit[0], good_commit[0]
-
-
-
 # main method
 def main():
     # TODO: give better error outputs
-    if (argv[1] == None):
-        print "missing parameter"
-        return
+    for arg in argv[1:4]:
+        if arg is None:
+            print("missing parameter")
+            sys.exit()
 
-    if (argv[2] == None):
-        print "missing parameter"
-        return
+    date_mode = None
 
-    if (argv[3] == None):
-        print "missing parameter"
-        return
+    if argv[1] == '-c':
+        # bad_commit and good_commit are sha1 IDs
+        date_mode = False
+    elif argv[1] == '-d':
+        # bad_commit and good_commit are dates
+        date_mode = True
+    else:
+        print("Wrong parameter for commit format")
+        sys.exit()
 
-    bad_date = argv[1]
-    good_date = argv[2]
+    bad_commit = argv[2]
+    good_commit = argv[3]
 
-    master_commits = subprocess.check_output(['git', 'rev-list', '--first-parent', 'master']).split('\n')[:-1]
+    if date_mode:
+        master_commits = subprocess.check_output(['git', 'rev-list', '--first-parent', 'master', '--after', good_commit, '--before', bad_commit]).split('\n')[:-1]
+        master_commits = master_commits[:-1]  # no sense to pass the good for sure commit
+    else:
+        master_commits = subprocess.check_output(['git', 'rev-list', '--first-parent', bad_commit]).split('\n')[:-1]
+        index = master_commits.index(good_commit)
+        master_commits = master_commits[:index]  # the good commit is excluded
 
-    badcommit, goodcommit = search_date(bad_date, good_date, master_commits)
-
-    index = master_commits.index(badcommit)
-    master_commits = master_commits[index:]
-
-    index = master_commits.index(goodcommit)
-    master_commits = master_commits[:index]
-
-    badcommit = bisect(master_commits, badcommit)
-
-    print badcommit
+    bad_commit = bisect(master_commits, bad_commit)
 
     is_merge = False
 
     # check if the resulted bad commit corresponds to a merge node
-    is_merge, branches = check_merge(badcommit)
+    is_merge, branches = check_merge(bad_commit)
 
-    while(is_merge):
-        oldbad = badcommit
+    while is_merge:
+        old_bad = bad_commit
 
         for branch in branches[1:]:
             # for each parent branch different from master branch [always the first in parent list]
@@ -166,29 +116,29 @@ def main():
             # split and eat the empty line
             branch = branch.split('\n')[:-1]
             # i get all the commits contained in that branch that are not present in the actual master branch and cutting out the merge node
-            new_commit = bisect(branch, badcommit)
+            new_commit = bisect(branch, bad_commit)
 
             # the bad commit is in the selected branch, not going to search the other in case of multiple merge
-            if new_commit != badcommit:
+            if new_commit != bad_commit:
                 # update the overall bad commit to check if it is a new merge node itself
-                badcommit = new_commit
+                bad_commit = new_commit
                 break
 
         # after searching all the sub-branches of the merge node, the bad commit is still the merge node
         # maybe the bug derives from a conflict in the merged items (easily possible in multiple merges)
-        if oldbad == badcommit:
+        if old_bad == bad_commit:
             break
         else:
             # check if the new selected bad commit is a merge node itself
             # if is_merge is False the loop will stop
-            is_merge, branches = check_merge(badcommit)
+            is_merge, branches = check_merge(bad_commit)
 
     subprocess.call(['git', 'checkout', 'master'])
 
-    print "---------------------------------------"
-    print "---------------------------------------"
-    print "The bug was introduced in this commit: "
-    print badcommit
+    print("---------------------------------------")
+    print("---------------------------------------")
+    print("The bug was introduced in this commit: ")
+    print(bad_commit)
 
 
 
