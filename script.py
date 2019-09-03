@@ -1,6 +1,7 @@
 import subprocess
 from sys import argv
 from os import devnull
+import sys
 
 # binary search implementation
 def bisect(list, badguy):
@@ -98,7 +99,7 @@ def search_date(bad_date, good_date, commits):
         commit = dmap[i]
         if i > 0:
             if dmap[i-1][1] > good_date and commit[1] <= good_date:
-                good_date = commit
+                good_commit = commit
                 break
 
 
