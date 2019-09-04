@@ -60,7 +60,7 @@ def main():
             ['git', 'rev-list', '--first-parent', 'master', '--max-age', good_commit, '--min-age', bad_commit]).split(
             '\n')[:-1]
         master_commits = master_commits[:-1]  # no sense to pass the good for sure commit
-    else:
+    elif args.commits:
         master_commits = subprocess.check_output(['git', 'rev-list', '--first-parent', bad_commit]).split('\n')[:-1]
         index = master_commits.index(good_commit)
         master_commits = master_commits[:index]  # the good commit is excluded
