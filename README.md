@@ -1,7 +1,7 @@
 ## Git 8sect
 
 This is an improved version of the git binary search (bisect) script.
-It can work on multiple branch merges and nested merges, trying to visit the least possible amount of nodes.
+It can work on merge nodes (2+ merged branches), trying to visit the least possible amount of nodes.
 The command line is almost the same of bisect.
 
 Update: now it is possible to define the bad and good commits whether by Id or by Date.

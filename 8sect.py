@@ -6,6 +6,9 @@ import parser
 
 # binary search implementation
 def bisect(commit_list, script):
+    if len(commit_list) == 1:
+        return commit_list[0]
+
     index = int(len(commit_list) / 2)  # needed for py3
     commit = commit_list[index]
     print("checking the commit: " + str(commit))
@@ -14,10 +17,6 @@ def bisect(commit_list, script):
     subprocess.call(['git', 'checkout', commit], stdout=fnull, stderr=fnull)  # subprocess.STDOUT)
 
     response = None
-
-    if len(commit_list) == 1:
-        return commit_list[0]
-
     # the benchmarking script is run and the exit code is stored in response
     response = subprocess.Popen(script, stdout=subprocess.PIPE)
     response.communicate()
@@ -71,6 +70,7 @@ def main():
     # check if the resulted bad commit corresponds to a merge node
     is_merge, parents = check_merge(bad_commit)
 
+    # TODO: it can't still work if one of the 3+ branches was forked from a secondary branch
     while is_merge:
         old_bad_commit = bad_commit
 
@@ -79,12 +79,13 @@ def main():
             other_parents = parents
             # list of parents different from the one I am checking for the '--not' argument of 'git rev-list'
             other_parents.remove(parent_commit)
+
             # get all the commits belonging to the selected branch
-            command_line = ['git', 'rev-list', parent_commit, '--not'] + other_parents
+            command_line = ['git', 'rev-list', bad_commit, '--not'] + other_parents
             branch_commits = subprocess.check_output(command_line)
             # split and eat the empty line
             branch_commits = branch_commits.split('\n')[:-1]
-            branch_commits = [bad_commit] + branch_commits
+            # branch_commits = [bad_commit] + branch_commits
             # i get all the commits contained in that branch that are not present in the actual master branch
             # and cutting out the merge node
             new_bad_commit = bisect(branch_commits, script)
