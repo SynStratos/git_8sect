@@ -6,10 +6,9 @@ The command line is almost the same of bisect.
 
 Update: now it is possible to define the bad and good commits whether by Id or by Date.
 
-Run in your git repository folder:
+### Usage
 ```
-$ python <path-to-this-script>/script.py  <bad-commit-sha1> <good-commit-sha1> -s <benchmarking-shell-script>
-$ python <path-to-this-script>/script.py  [-d] <bad-commit-date> <good-commit-date> -s <benchmarking-shell-script>
+script.py [-h] [-d] [-s SCRIPT] bad_commit good_commit
 ```
 
 ### Example

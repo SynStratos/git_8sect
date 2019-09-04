@@ -1,7 +1,7 @@
 import subprocess
 import sys
 from os import devnull
-import argparse
+import parser
 
 args = None
 
@@ -15,44 +15,25 @@ def bisect(list, badguy):
     print("checking the commit: " + str(commit))
 
     fnull = open(devnull, 'w') # I don't want to print checkout stdout
-    retcode = subprocess.call(['git', 'checkout', commit], stdout=fnull, stderr=subprocess.STDOUT)
+    subprocess.call(['git', 'checkout', commit], stdout=fnull, stderr=fnull)  # subprocess.STDOUT)
 
-    # the benchmarking script is run and the exit code is stored in response
     response = subprocess.Popen(script, stdout=subprocess.PIPE)
     response.communicate()
     response = response.returncode
 
-    # TODO: check if special code 125 is needed and decide range of error codes
-    # by default, 0 exit code means the commit is a good one
-
-    if len(list) == 1:
-        print("last check for this branch")
-        if response == 0:
-            print("good")
-            return badguy
-        # elif response == 125:
-        #
-        else:
-            print("bad")
-            return commit
-
     if response == 0:
-        print("good")
-        badguy = bisect(list[:index], badguy)
-    # elif response == 125:
-    #    print 'error'
-    else:
-        badguy = commit
-        # if the bad commit is the last element of the current list, the research is over
-        if list.index(badguy) == len(list) - 1:
-            print("last check for this branch")
-            print("bad")
+        # GOOD
+        if len(list) == 1:
             return badguy
         else:
-            print("bad")
-            badguy = bisect(list[index+1:], badguy)
+            return bisect(list[:index], badguy)
 
-    return badguy
+    else:
+       # BAD
+        if len(list) == 1 or index == len(list) - 1:
+            return commit
+        else:
+            return bisect(list[index+1:], commit)
 
 
 # this method will check if the commit is a merge node, returning all the branches involved in the merge
@@ -126,23 +107,7 @@ def main():
     print(bad_commit)
 
 
-class MyParser(argparse.ArgumentParser):
-    description = 'Process script parameters.'
-
-    def error(self, message):
-        sys.stderr.write('error: %s\n' % message)
-        self.print_help()
-        sys.exit(2)
-
-
 if __name__=='__main__':
-    parser = MyParser()
-    parser.add_argument('-d', '--dates', default='False', action='store_true',
-                        help='use timestamps instead of commit sha1')
-    parser.add_argument('bad_commit', help='define the sha1 or date of the bad commit')
-    parser.add_argument('good_commit', help='define the sha1 or date of the good commit')
-    parser.add_argument('-s', '--script', help='define the shell script to run as benchmark', required=True)
-
-    args = parser.parse_args(sys.argv[1:])
+    args = parser.parse(sys.argv[1:])
 
     main()
