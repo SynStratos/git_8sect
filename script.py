@@ -8,7 +8,7 @@ args = None
 
 # binary search implementation
 def bisect(list, badguy):
-    script = args['script'].split(' ')
+    script = args.script.split(' ')
     index = int(len(list) / 2)
 
     commit = list[index]
@@ -69,10 +69,10 @@ def check_merge(commit):
 
 # main method
 def main():
-    bad_commit = args['bad-commit']
-    good_commit = args['good-commit']
+    bad_commit = args.bad_commit
+    good_commit = args.good_commit
 
-    if args['dates']:
+    if args.dates:
         master_commits = subprocess.check_output(['git', 'rev-list', '--first-parent', 'master', '--after', good_commit, '--before', bad_commit]).split('\n')[:-1]
         master_commits = master_commits[:-1]  # no sense to pass the good for sure commit
     else:
@@ -139,8 +139,8 @@ if __name__=='__main__':
     parser = MyParser()
     parser.add_argument('-d', '--dates', default='False', action='store_true',
                         help='use timestamps instead of commit sha1')
-    parser.add_argument('bad-commit', help='define the sha1 or date of the bad commit')
-    parser.add_argument('good-commit', help='define the sha1 or date of the good commit')
+    parser.add_argument('bad_commit', help='define the sha1 or date of the bad commit')
+    parser.add_argument('good_commit', help='define the sha1 or date of the good commit')
     parser.add_argument('-s', '--script', help='define the shell script to run as benchmark', required=True)
 
     args = parser.parse_args(sys.argv[1:])
