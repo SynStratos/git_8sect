@@ -36,7 +36,7 @@ def bisect(commit_list, script):
 def check_merge(commit):
     commit_log = subprocess.check_output(['git', 'log', '-1', commit])
     commit_log = commit_log.split('\n')[1]
-    commit_log = commit_log.split(' ')
+    commit_log = commit_log.split()
 
     # check if the line contains the header "Merge:"
     if commit_log[0] == 'Merge:':
@@ -51,6 +51,7 @@ def main():
     args = parser.parse(sys.argv[1:])
     bad_commit = args.bad_commit
     good_commit = args.good_commit
+    script = args.script.split()
 
     if args.dates:
         master_commits = subprocess.check_output(['git', 'rev-list', '--first-parent', 'master', '--after', good_commit, '--before', bad_commit]).split('\n')[:-1]
@@ -65,7 +66,7 @@ def main():
         index = master_commits.index(good_commit)
         master_commits = master_commits[:index]  # the good commit is excluded
 
-    bad_commit = bisect(master_commits, bad_commit)
+    bad_commit = bisect(master_commits, script)
 
     # check if the resulted bad commit corresponds to a merge node
     is_merge, parents = check_merge(bad_commit)
@@ -79,13 +80,14 @@ def main():
             # list of parents different from the one I am checking for the '--not' argument of 'git rev-list'
             other_parents.remove(parent_commit)
             # get all the commits belonging to the selected branch
-            command_line = ['git', 'rev-list', bad_commit, '--not'] + other_parents
+            command_line = ['git', 'rev-list', parent_commit, '--not'] + other_parents
             branch_commits = subprocess.check_output(command_line)
             # split and eat the empty line
             branch_commits = branch_commits.split('\n')[:-1]
+            branch_commits = [bad_commit] + branch_commits
             # i get all the commits contained in that branch that are not present in the actual master branch
             # and cutting out the merge node
-            new_bad_commit = bisect(branch_commits, bad_commit)
+            new_bad_commit = bisect(branch_commits, script)
 
             # the bad commit is in the selected branch, not going to search the other in case of multiple merge
             if new_bad_commit != bad_commit:
