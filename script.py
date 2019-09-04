@@ -1,12 +1,14 @@
 import subprocess
-from sys import argv
-from os import devnull
 import sys
+from os import devnull
+import argparse
+
+args = None
+
 
 # binary search implementation
 def bisect(list, badguy):
-
-    script = argv[4].split(' ')
+    script = args['script'].split(' ')
     index = int(len(list) / 2)
 
     commit = list[index]
@@ -64,30 +66,13 @@ def check_merge(commit):
     else:
         return False, None
 
+
 # main method
 def main():
-    # TODO: give better error outputs
-    for arg in argv[1:4]:
-        if arg is None:
-            print("missing parameter")
-            sys.exit()
+    bad_commit = args['bad-commit']
+    good_commit = args['good-commit']
 
-    date_mode = None
-
-    if argv[1] == '-c':
-        # bad_commit and good_commit are sha1 IDs
-        date_mode = False
-    elif argv[1] == '-d':
-        # bad_commit and good_commit are dates
-        date_mode = True
-    else:
-        print("Wrong parameter for commit format")
-        sys.exit()
-
-    bad_commit = argv[2]
-    good_commit = argv[3]
-
-    if date_mode:
+    if args['dates']:
         master_commits = subprocess.check_output(['git', 'rev-list', '--first-parent', 'master', '--after', good_commit, '--before', bad_commit]).split('\n')[:-1]
         master_commits = master_commits[:-1]  # no sense to pass the good for sure commit
     else:
@@ -141,6 +126,23 @@ def main():
     print(bad_commit)
 
 
+class MyParser(argparse.ArgumentParser):
+    description = 'Process script parameters.'
+
+    def error(self, message):
+        sys.stderr.write('error: %s\n' % message)
+        self.print_help()
+        sys.exit(2)
+
 
 if __name__=='__main__':
+    parser = MyParser()
+    parser.add_argument('-d', '--dates', default='False', action='store_true',
+                        help='use timestamps instead of commit sha1')
+    parser.add_argument('bad-commit', help='define the sha1 or date of the bad commit')
+    parser.add_argument('good-commit', help='define the sha1 or date of the good commit')
+    parser.add_argument('-s', '--script', help='define the shell script to run as benchmark', required=True)
+
+    args = parser.parse_args(sys.argv[1:])
+
     main()
