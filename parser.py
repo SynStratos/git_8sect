@@ -11,7 +11,7 @@ class MyParser(argparse.ArgumentParser):
 
 def parse(args):
     parser = MyParser()
-    type_group = parser.add_mutually_exclusive_group('commit identificator type', required=True)
+    type_group = parser.add_mutually_exclusive_group(required=True)
     type_group.add_argument('-c', '--commits', default='False', action='store_true',
                             help='use sha1 identifier')
     type_group.add_argument('-d', '--dates', default='False', action='store_true',
