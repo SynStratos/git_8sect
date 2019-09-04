@@ -8,7 +8,7 @@ Update: now it is possible to define the bad and good commits whether by Id or b
 
 ### Usage
 ```
-script.py [-h] [-d] [-s SCRIPT] bad_commit good_commit
+8sect.py [-h] [-d] [-s SCRIPT] bad_commit good_commit
 ```
 
 ### Example

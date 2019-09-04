@@ -3,8 +3,6 @@ import sys
 from os import devnull
 import parser
 
-args = None
-
 
 # binary search implementation
 def bisect(commit_list, script):
@@ -50,11 +48,17 @@ def check_merge(commit):
 
 # main method
 def main():
+    args = parser.parse(sys.argv[1:])
     bad_commit = args.bad_commit
     good_commit = args.good_commit
 
     if args.dates:
         master_commits = subprocess.check_output(['git', 'rev-list', '--first-parent', 'master', '--after', good_commit, '--before', bad_commit]).split('\n')[:-1]
+        master_commits = master_commits[:-1]  # no sense to pass the good for sure commit
+    elif args.timestamps:
+        master_commits = subprocess.check_output(
+            ['git', 'rev-list', '--first-parent', 'master', '--max-age', good_commit, '--min-age', bad_commit]).split(
+            '\n')[:-1]
         master_commits = master_commits[:-1]  # no sense to pass the good for sure commit
     else:
         master_commits = subprocess.check_output(['git', 'rev-list', '--first-parent', bad_commit]).split('\n')[:-1]
@@ -107,5 +111,4 @@ def main():
 
 
 if __name__ == '__main__':
-    args = parser.parse(sys.argv[1:])
     main()

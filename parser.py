@@ -11,8 +11,14 @@ class MyParser(argparse.ArgumentParser):
 
 def parse(args):
     parser = MyParser()
-    parser.add_argument('-d', '--dates', default='False', action='store_true',
-                        help='use timestamps instead of commit sha1')
+    type_group = parser.add_mutually_exclusive_group('commit identificator type', required=True)
+    type_group.add_argument('-c', '--commits', default='False', action='store_true',
+                            help='use sha1 identifier')
+    type_group.add_argument('-d', '--dates', default='False', action='store_true',
+                        help='use dates')
+    type_group.add_argument('-t', '--timestamps', default='False', action='store_true',
+                            help='use timestamps')
+
     parser.add_argument('bad_commit', help='define the sha1 or date of the bad commit')
     parser.add_argument('good_commit', help='define the sha1 or date of the good commit')
 
